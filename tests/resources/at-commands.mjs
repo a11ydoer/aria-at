@@ -1,259 +1,100 @@
 import * as keys from './keys.mjs';
 
-const KNOWN_ATS = {
-  jaws: 'JAWS',
-  nvda: 'NVDA',
-  voiceover: 'VoiceOver'
-}
+/** Class for getting AT-specific instructions for a test against a design pattern. */
+export class commandsAPI {
+  /**
+   * Creates an API to get AT-specific instructions for a design pattern.
+   * @param {object} commands - A data structure which is a nested object with the following format:
+   *   {
+   *     task: {
+   *       mode: {
+   *         at: [
+   *           key-command (string corresponding to export in keys.mjs),
+   *           optional additional instructions to list after key command (string),
+   *         ]
+   *       }
+   *     }
+   *   }
+   */
+constructor(commands, support) {
+    if (!commands) {
+      throw new Error("You must initialize commandsAPI with a commands data object");
+    }
 
-/* Add new commands here */
+    if (!support) {
+      throw new Error("You must initialize commandsAPI with a support data object");
+    }
 
-const AT_COMMAND_MAP = {
-  "navigate to combobox": {
-    reading: {
-      jaws: [
-        keys.C_AND_SHIFT_C,
-        keys.F_AND_SHIFT_F,
-        keys.UP_AND_DOWN,
-	`${keys.LEFT_AND_RIGHT} (with Smart Navigation set to Controls and Tables)`
-      ]
-    },
-    interaction: {
-      jaws: [
-        keys.TAB_AND_SHIFT_TAB
-      ]
-    }
-  },
-  "read combobox": {
-    reading: {
-      jaws: [
-        keys.INSERT_TAB,
-        keys.INSERT_UP
-      ]
-    },
-    interaction: {
-      jaws: [
-        keys.INSERT_TAB,
-        keys.INSERT_UP
-      ]
-    }
-  },
-  "navigate to combobox with keys that switch modes": {
-    reading: {
-      jaws: [
-        keys.TAB_AND_SHIFT_TAB
-      ]
-    }
-  },
-  "activate combobox": {
-    reading: {
-      jaws: [
-        keys.ENTER
-      ]
-    }
-  },
-  "open combobox from input": {
-    interaction: {
-      jaws: [
-        keys.DOWN,
-        keys.UP
-      ]
-    }
-  },
-  "navigate to checkbox": {
-    reading: {
-      jaws: [
-        keys.X_AND_SHIFT_X,
-        keys.TAB_AND_SHIFT_TAB,
-        keys.UP_AND_DOWN,
-        `${keys.LEFT_AND_RIGHT} (with Smart Navigation on)`,
-        `${keys.CTRL_INS_X} to see a list of checkboxes; then use the Up/Down arrows to select a checkbox; then press Enter to navigate to that checkbox`
-      ],
-      nvda: [
-        keys.X_AND_SHIFT_X,
-        keys.TAB_AND_SHIFT_TAB,
-        keys.UP_AND_DOWN,
-        keys.INS_DOWN_OR_CAPS_DOWN,
-        `${keys.INS_F7_OR_CAPS_F7} to access list of elements on the page; then select ‘type’ = ‘form fields’; then select a checkbox in the list of form controls; then press ‘Enter’ to navigate to that checkbox`
-      ],
-      voiceover: [
-      ]
-    },
-    interaction: {
-      jaws: [
-        keys.TAB_AND_SHIFT_TAB
-      ],
-      nvda: [
-        keys.TAB_AND_SHIFT_TAB
-      ],
-      voiceover: [
-        keys.TAB_AND_SHIFT_TAB,
-        keys.CTRL_OPT_RIGHT_AND_CTRL_OPT_LEFT,
-        keys.CTRL_OPT_A,
-        keys.CTRL_OPT_CMD_J_AND_SHIFT_CTRL_OPT_CMD_J,
-        keys.CTRL_OPT_CMD_C_AND_SHIFT_CTRL_OPT_CMD_C,
-        `${keys.CTRL_U} to open the ‘Rotor’ menu; then press the Right arrow until the list of 'Form Controls’ appears; then select a checkbox in the list of form controls using the Up/Down arrow keys; then press ‘Enter’ to navigate to that checkbox`
-      ]
-    }
-  },
-  "read checkbox": {
-    reading: {
-      jaws: [
-        keys.INS_TAB_OR_CAPS_TAB,
-        keys.INS_UP_OR_CAPS_I
-      ],
-      nvda: [
-        keys.INS_TAB_OR_CAPS_TAB,
-        keys.INS_UP_OR_CAPS_UP
-      ],
-      voiceover: [
-      ]
-    },
-    interaction: {
-      jaws: [
-        keys.INS_TAB_OR_CAPS_TAB,
-        keys.INS_UP_OR_CAPS_I
-      ],
-      nvda: [
-        keys.INS_TAB_OR_CAPS_TAB,
-        keys.INS_UP_OR_CAPS_UP
-      ],
-      voiceover: [
-      ]
-    }
-  },
-  "operate checkbox": {
-    reading: {
-      jaws: [
-        keys.ENTER,
-        keys.SPACE
-      ],
-      nvda: [
-        keys.ENTER,
-        keys.SPACE
-      ],
-      voiceover: [
-      ]
-    },
-    interaction: {
-      jaws: [
-        keys.SPACE
-      ],
-      nvda: [
-        keys.SPACE
-      ],
-      voiceover: [
-        keys.CTRL_OPT_SPACE,
-        keys.SPACE
-      ]
-    }
-  },
-  "navigate to checkbox group": {
-    reading: {
-      jaws: [
-        keys.UP_AND_DOWN,
-        keys.TAB_AND_SHIFT_TAB,
-        `${keys.CTRL_INS_X} to see a list of checkboxes; then use the Up/Down arrows to select a checkbox; then press Enter to navigate to that checkbox`
-      ],
-      nvda: [
-        keys.X_AND_SHIFT_X,
-        keys.UP_AND_DOWN,
-        keys.TAB_AND_SHIFT_TAB,
-        keys.INS_DOWN_OR_CAPS_DOWN,
-        `${keys.INS_F7_OR_CAPS_F7} to access list of elements on the page; then select ‘type’ = ‘form fields’; then select a checkbox in the list of form controls; then press ‘Enter’ to navigate to that checkbox`
-      ],
-      voiceover: [
-      ]
-    },
-    interaction: {
-      jaws: [
-	keys.TAB_AND_SHIFT_TAB
-      ],
-      nvda: [
-        keys.TAB_AND_SHIFT_TAB
-      ],
-      voiceover: [
-        keys.TAB_AND_SHIFT_TAB,
-        keys.CTRL_OPT_RIGHT_AND_CTRL_OPT_LEFT,
-        keys.CTRL_OPT_A,
-        keys.CTRL_OPT_CMD_J_AND_SHIFT_CTRL_OPT_CMD_J,
-        keys.CTRL_OPT_CMD_C_AND_SHIFT_CTRL_OPT_CMD_C,
-        `${keys.CTRL_U} to open the ‘Rotor’ menu; then press the Right arrow until the list of 'Form Controls’ appears; then select a checkbox in the list of form controls using the Up/Down arrow keys; then press ‘Enter’ to navigate to that checkbox`
-      ]
-    },
-  },
-  "read the checkbox group": {
-    reading: {
-      jaws: [
-        keys.INS_TAB_OR_CAPS_TAB,
-        keys.INS_UP_OR_CAPS_I
-      ],
-      nvda: [
-        keys.INS_TAB_OR_CAPS_TAB,
-        keys.INS_UP_OR_CAPS_UP
-      ],
-      voiceover: [
-      ]
-    },
-    interaction: {
-      jaws: [
-        keys.INS_TAB_OR_CAPS_TAB,
-        keys.INS_UP_OR_CAPS_I
-      ],
-      nvda: [
-        keys.INS_TAB_OR_CAPS_TAB,
-        keys.INS_UP_OR_CAPS_UP
-      ],
-      voiceover: [
-      ]
-    }
-  }
-};
+    this.AT_COMMAND_MAP = commands;
 
-const MODE_INSTRUCTIONS = {
-  reading: {
-    jaws: `Put JAWS into Virtual Cursor Mode using ${keys.INS_Z}`,
-    nvda: `Put NVDA into Browser Mode using ${keys.ESC}`,
-    voiceover: ""
-  },
-  interaction: {
-    jaws: `Put JAWS into Forms Mode by turning Virual Cursor off using ${keys.INS_Z}`,
-    nvda: "Put NVDA into Focus Mode using NVDA+Space",
-    voiceover: `Turn Quick Nav off by pressing the ${keys.LEFT} and ${keys.RIGHT} keys at the same time.`
-  }
-};
+    this.MODE_INSTRUCTIONS = {
+      reading: {
+        jaws: `Put JAWS into Virtual Cursor Mode using ${keys.INS_Z}`,
+        nvda: `Put NVDA into Browse Mode using ${keys.ESC}`,
+        voiceover_macos: `Toggle Quick Nav ON by pressing the ${keys.LEFT} and ${keys.RIGHT} keys at the same time.`
+      },
+      interaction: {
+        jaws: `Put JAWS into Forms Mode by turning Virtual Cursor off using ${keys.INS_Z}`,
+        nvda: "Put NVDA into Focus Mode using NVDA+Space",
+        voiceover_macos: `Toggle Quick Nav OFF by pressing the ${keys.LEFT} and ${keys.RIGHT} keys at the same time.`
+      }
+    };
 
-export function getATCommands(mode, task, assistiveTech) {
-  const at = assistiveTech.toLowerCase();
-
-  if (!AT_COMMAND_MAP[task]) {
-    throw new Error(`Task "${task}" does not exist, please add to at-commands or correct your spelling.`);
-  }
-  else if (!AT_COMMAND_MAP[task][mode]) {
-    throw new Error(`Mode "${mode}" instructions for task "${task}" does not exist, please add to at-commands or correct your spelling.`);
+    this.support = support;
   }
 
-  return AT_COMMAND_MAP[task][mode][at] || [];
-}
 
-export function getModeInstructions(mode, assistiveTech) {
-  const at = assistiveTech.toLowerCase();
-  if (MODE_INSTRUCTIONS[mode] && MODE_INSTRUCTIONS[mode][at]) {
-    return MODE_INSTRUCTIONS[mode][at];
-  }
-  return '';
-}
-
-export function isKnownAT(at) {
-  return KNOWN_ATS[at.toLowerCase()];
-}
-
-export function getAdditionalAssertions(atAdditionalAssertions, key, mode) {
-  let assertions = [];
-  for (let assertion of atAdditionalAssertions) {
-    if (assertion.keys.includes(key) && assertion.mode === mode) {
-      assertions.push(assertion.assertion);
+  /**
+   * Get AT-specific instruction
+   * @param {string} mode - The mode of the screen reader, "reading" or "interaction"
+   * @param {string} task - The task of the test.
+   * @param {string} assitiveTech - The assistive technology.
+   * @return {Array} - A list of commands (strings)
+   */
+  getATCommands(mode, task, assistiveTech) {
+    if (!this.AT_COMMAND_MAP[task]) {
+      throw new Error(`Task "${task}" does not exist, please add to at-commands or correct your spelling.`);
     }
+    else if (!this.AT_COMMAND_MAP[task][mode]) {
+      throw new Error(`Mode "${mode}" instructions for task "${task}" does not exist, please add to at-commands or correct your spelling.`);
+    }
+
+    let commandsData = this.AT_COMMAND_MAP[task][mode][assistiveTech.key] || [];
+    let commands = [];
+
+    for (let c of commandsData) {
+      let command = keys[c[0]];
+      if (typeof command === 'undefined') {
+        throw new Error(`Key instruction identifier "${c}" for AT "${assistiveTech.name}", mode "${mode}", task "${task}" is not an available identified. Update you commands.json file to the correct identifier or add your identifier to resources/keys.mjs.`);
+      }
+
+      let furtherInstruction = c[1];
+      command = furtherInstruction ? `${command} ${furtherInstruction}` : command;
+      commands.push(command);
+    }
+
+    return commands;
   }
-  return assertions;
+
+  /**
+   * Get AT-specific mode switching instructions
+   * @param {string} mode - The mode of the screen reader, "reading" or "interaction"
+   * @param {string} assistiveTech - The assistive technology.
+   * @return {string} - Instructions for switching into the correct mode.
+   */
+  getModeInstructions(mode, assistiveTech) {
+    if (this.MODE_INSTRUCTIONS[mode] && this.MODE_INSTRUCTIONS[mode][assistiveTech.key]) {
+      return this.MODE_INSTRUCTIONS[mode][assistiveTech.key];
+    }
+    return '';
+  }
+
+  /**
+   * Get AT-specific instruction
+   * @param {string} at - an assitve technology with any capitalization
+   * @return {string} - if this API knows instructions for `at`, it will return the `at` with proper capitalization
+   */
+  isKnownAT(at) {
+    return this.support.ats.find(o => o.key === at.toLowerCase());
+  }
 }

@@ -1,0 +1,21 @@
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Activating 'States' button opens combobox and conveys name; role; editability; and state</title>
+<link rel="help" href="https://w3c.github.io/aria-practices/examples/combobox/combobox-autocomplete-both.html">
+
+<script src="scripts.js"></script>
+<script type="module">
+  import { initialize, verifyATBehavior, displayTestPageAndInstructions } from "../resources/aria-at-harness.mjs";
+
+  Promise.all(["test-19-activate-states-button-reading.json", '../support.json', 'commands.json'].map(url =>
+    fetch(url)
+      .then(response => response.json()) // parse the JSON from the server
+  ))
+  .then(data => {
+    // do something with the data
+    initialize(data[1], data[2]);
+    verifyATBehavior(data[0]);
+    displayTestPageAndInstructions("reference/combobox-autocomplete-both.html");
+  });
+</script>

@@ -9,27 +9,20 @@ export default class RunResults extends Component {
 
   renderResultRow(result, i) {
 
-    // Details is an array of one because the tests originally were designed to have multiple "behavior" tests,
-    // but for now all tests only test one "behavior" and this functionality might be removed.
-    const details = result.details[0];
-
+    const details = result.details;
     return (
       <tr key={details.name}>
         <td><a href={`#test-${i.toString()}`}>{details.name}</a></td>
         <td>{details.summary[1].pass} / {details.summary[1].fail}</td>
         <td>{details.summary[2].pass} / {details.summary[2].fail}</td>
-        <td>{details.summary[3].pass} / {details.summary[3].fail}</td>
-        <td>{details.summary.unexpectedCount}</td>
+        <td>{details.unexpectedCount}</td>
       </tr>
     );
   }
 
   renderResultDetails(result, i) {
 
-    // Details is an array of one because the tests originally were designed to have multiple "behavior" tests,
-    // but for now all tests only test one "behavior" and this functionality might be removed.
-    const details = result.details[0];
-
+    const details = result.details;
     return (
       <section>
         <h2 id={`test-${i.toString()}`}>Details for test "{details.name}"</h2>
@@ -55,7 +48,7 @@ export default class RunResults extends Component {
         <td>{command.command}</td>
         <td>{command.support}</td>
         <td>
-          <p>JAWS output: "{command.output}"</p>
+          <p>Output: "{command.output}"</p>
           {this.renderPassingAssertions(command.assertions)}
           {this.renderFailingAssertions(command.assertions)}
           {this.renderUnexpectedBehavior(command.unexpected_behaviors)}
@@ -107,59 +100,70 @@ export default class RunResults extends Component {
     let { assistiveTechnology, browser, designPattern, results } = resultsData;
     let countTests = results.length;
 
+    let loadedFromFile = resultsData.fileName ? true : false;
     let fileName = resultsData.fileName
 	? `${resultsData.fileName}.json`
 	: `results_${assistiveTechnology.name}-${assistiveTechnology.version}_${browser.name}-${browser.version}_${new Date().toISOString()}.json`;
-
+    let dateOfRun = resultsData.dateOfRun ? new Date(resultsData.dateOfRun).toLocaleString() : undefined;
+    let testCase = resultsData.designPattern;
+    let testCaseTestPageMap = {
+      "checkbox": "../../tests/checkbox/reference/two-state-checkbox.html",
+      "menubar-edit": "../../tests/menubar-edit/reference/menubar-editor.html",
+      "combobox-autocomplete-both": "../../tests/combobox-autocomplete-both/reference/combobox-autocomplete-both.html"
+    };
+    let testCaseLink = testCaseTestPageMap[testCase];
 
     // This array is for caculating percentage support
-    // Accross all tests for priorities 1-3
+    // Accross all tests for priorities 1-2
     let support = {
       1: [0, 0],
-      2: [0, 0],
-      3: [0, 0]
+      2: [0, 0]
     };
     let totalUnexpecteds = 0;
 
     for (let result of results) {
-      let details = result.details[0];
-      totalUnexpecteds += details.summary.unexpectedCount;
-      for (let i = 1; i <= 3; i++) {
+      let details = result.details;
+      totalUnexpecteds += parseInt(details.unexpectedCount);
+      for (let i = 1; i <= 2; i++) {
         support[i][0] += details.summary[i].pass;
         support[i][1] += details.summary[i].pass + details.summary[i].fail;
       }
     }
 
+    let atVersion = assistiveTechnology.version ? ` (${assistiveTechnology.version})` : '';
+    let browserVersion = browser.version ? ` (${browser.version})` : '';
 
     return (
       <Fragment>
         <Head>
           <title>ARIA-AT: Test Run Results</title>
         </Head>
+        <nav aria-label="Breadcrumb">
+          <a href="/aria-at/">ARIA-AT Home</a> &gt; <a href="/aria-at/results/">Test Results</a>
+        </nav>
         <section>
           <h1>{`Results for test run of pattern "${designPattern}" (${countTests} test${countTests === 1 ? '' : 's'})`}</h1>
+          <p>CAUTION: The information on this page is preliminary and not for use outside the ARIA-AT project.</p>
           <p>
-            {`${assistiveTechnology.name} (${assistiveTechnology.version}) on ${browser.name} (${browser.version})`}
+            {`Results for ${assistiveTechnology.name}${atVersion} in ${browser.name}${browserVersion}`}
           </p>
-          { fileName &&
-            <p>
-              Loaded from result file: {fileName}
-            </p>
-          }
-	  <p>
-            <a
-              download={fileName}
-              href={`data:application/json;charset=utf-8;,${encodeURIComponent(JSON.stringify(resultsData))}`}>Download Results JSON
-            </a>
-	  </p>
+            <ul>
+              <li><a href={testCaseLink}>Test Case: {testCase}</a></li>
+              {dateOfRun && <li>Updated: {dateOfRun}</li>}
+              {loadedFromFile && <li>Loaded from result file: {fileName}</li>}
+              <li>
+                <a download={fileName} href={`data:application/json;charset=utf-8;,${encodeURIComponent(JSON.stringify(resultsData))}`}>
+                  Download Results JSON
+                </a>
+              </li>
+            </ul>
           <h2>Summary of tests</h2>
           <table className="results-table">
             <thead>
               <tr>
                 <th>Test</th>
-                <th><div>Must Have</div><div>(pass/fail)</div></th>
-                <th><div>Should Have</div><div>(pass/fail)</div></th>
-                <th><div>Nice to Have</div><div>(pass/fail)</div></th>
+                <th><div>Required</div><div>(pass/fail)</div></th>
+                <th><div>Optional</div><div>(pass/fail)</div></th>
                 <th><div>Unexpected Behaviors</div><div>(total count)</div></th>
               </tr>
             </thead>
@@ -169,7 +173,6 @@ export default class RunResults extends Component {
                 <td>Support</td>
                 <td>{support[1][1] ? `${Math.round((support[1][0]/support[1][1])*100)}%` : '-'}</td>
                 <td>{support[2][1] ? `${Math.round((support[2][0]/support[2][1])*100)}%` : '-'}</td>
-                <td>{support[3][1] ? `${Math.round((support[3][0]/support[3][1])*100)}%` : '-'}</td>
                 <td>{totalUnexpecteds ? `${totalUnexpecteds} command(s) produced unexpected behaviors` : "No unexpected behaviors" }</td>
               </tr>
             </tbody>

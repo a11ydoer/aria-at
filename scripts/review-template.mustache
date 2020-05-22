@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+  <head>
+    <title>Test plan review for pattern: {{pattern}}</title>
+    <style>
+      table {
+        border-collapse: collapse;
+        margin-bottom: 1em;
+      }
+
+      table, td, th {
+        border: 1px solid black;
+      }
+
+      td {
+        padding: .5em;
+      }
+
+    </style>
+    <script>
+      const filterATs = function(button) {
+        const val = button.value;
+
+        if (val === 'all') {
+          for (let at of document.querySelectorAll('input')) {
+            if (at.value !== 'all') {
+              for (let result of document.querySelectorAll(`.${at.value}`)) {
+                result.style.display = 'block';
+              }
+              at.checked = false;
+            }
+            else {
+              at.checked = true;
+            }
+          }
+        }
+        else {
+          for (let at of document.querySelectorAll('input')) {
+
+            if (at.value === val) {
+              at.checked = true;
+            }
+            else {
+              at.checked = false;
+            }
+
+            for (let result of document.querySelectorAll(`.${at.value}`)) {
+              result.style.display = 'none';
+            }
+            for (let result of document.querySelectorAll(`.${val}`)) {
+              result.style.display = 'block';
+            }
+
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+
+    <h1>Test plan review for pattern: {{pattern}} ({{totalTests}} tests)</h1>
+
+    <fieldset>
+      <legend>Filter tests by assistive technology</legend>
+      <input type="radio" onclick="filterATs(this)" id="all" value="all" checked="true"><label for="all">All assistive technologies</label>
+      {{#AToptions}}
+        <input type="radio" onclick="filterATs(this)" id="{{key}}" value="{{key}}"><label for="{{key}}">{{name}}</label>
+      {{/AToptions}}
+    </fieldset>
+
+    {{#tests}}
+    <h2>Test {{testNumber}}: {{{name}}}</h2>
+    <p>
+      <ul>
+        <li>Mode: {{mode}}</i>
+        <li>Applies to: {{allReleventATs}}</li>
+        <li>Lasted edited: {{lastEdited}}
+        <li>File: <a href="https://github.com/w3c/aria-at/tree/master/tests{{{location}}}">{{{location}}}<a></li>
+        <li>Relevant Specifications:
+          <ul>
+            {{#helpLinks}}
+              <li><a href="{{link}}">{{text}}</a></li>
+            {{/helpLinks}}
+          </ul>
+        </li>
+      </ul>
+    </p>
+      {{#ATTests}}
+      <div class="{{atKey}}">
+        <h3>{{atName}}</h3>
+        {{#setupScriptDescription}}
+        <h4>Scripted Instructions</h4>
+        The following instructions are executed by a script in the test page to initialize the widget:
+        <ol>
+        <li>{{.}}</li>
+        </ol>
+        {{/setupScriptDescription}}
+        <h4>Tester Instructions</h4>
+        <p>
+          <ol>
+             <li>{{modeInstruction}}</li>
+             <li>{{userInstruction}} using the following commands:
+               <ul>
+                 {{#commands}}
+                   <li>{{.}}</li>
+                 {{/commands}}
+                 {{^commands}}
+                   <li>No commands have been added for this test for {{atName}}. Add commands, or, update the "applies_to" to list only the relevant assistive technologies.</li>
+                 {{/commands}}
+               </ul>
+             </li>
+          </ol>
+        </p>
+        <h4>Assertions</h4>
+        <table>
+          <tr><th>Priority</th><th>Assertion</th></tr>
+          {{#assertions}}
+            <tr><td>{{priority}}</td><td>{{description}}</td></tr>
+          {{/assertions}}
+          {{^assertions}}
+            <tr><td colspan="2">No assertions have been listed for {{atName}}. Add assertion or update the "applies_to" to list only the relevent assistive technologies.</td></tr>
+          {{/assertions}}
+        </table>
+      </div>
+      {{/ATTests}}
+    {{/tests}}
+
+  </body>
+</html>
